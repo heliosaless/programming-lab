@@ -17,6 +17,15 @@ void realocVector(T *&vector, int &max){
     //cout << "vector realocada! Novo tamanho: " << max << "\n";
 }
 
+
+template<class T>
+void deleteVecVec(T** vec, int n_instances){
+    for (int i = 0; i < n_instances; i++){
+        delete[] vec[i];
+    }
+    delete[] vec;
+}
+
 template <class T>
 void printVector(T *vector, const int len)
 {
@@ -80,6 +89,7 @@ void doHeap(T* vector, const int len){ // Comeca do pai do ultimo elemento. Não
 
 template<class T>
 void heapSort(T* heap, const int len){
+/*
     if(len == 1){
         return;
     }
@@ -87,6 +97,12 @@ void heapSort(T* heap, const int len){
     changeVector(heap, 0, len - 1);
     downHeap(heap, 0, len - 1);
     heapSort(heap, len - 1);
+*/
+    for (int i = len-1; i > 0; i--){
+        changeVector(heap, 0, i);
+        downHeap(heap, 0, i);
+
+    }
 
 }
 
@@ -100,6 +116,7 @@ int randomBetween(const int begin, const int end){
 int pivot(const int begin, const int end, bool randomized = false){
     if(randomized) return randomBetween(begin, end);
     return (begin+end)/2;
+    //return begin;
 }
 
 template<class T>
@@ -259,15 +276,20 @@ int main(int argc, char *argv[])
         vector[i] = vector_aux;
     }
 
-
+    int **vectorOrder = new int*[n_instances];
     int **vectorHeap = new int*[n_instances];
     int **vectorQuick = new int*[n_instances];
     int **vectorQuickR = new int*[n_instances];
     int **vectorIntro = new int*[n_instances];
 
     for (int i = 0; i < n_instances; i++){
+        int *vectorOrder_aux = new int[n];
+        copyVector(vector[i], vectorOrder_aux, n);
+        vectorOrder[i] = vectorOrder_aux;
+
         int *vectorHeap_aux = new int[n];
         copyVector(vector[i], vectorHeap_aux, n);
+        doHeap(vectorHeap_aux, n);
         vectorHeap[i] = vectorHeap_aux;
 
         int *vectorQuick_aux = new int[n];
@@ -283,25 +305,16 @@ int main(int argc, char *argv[])
         vectorIntro[i] = vectorIntro_aux;
     }
 
-    int *orderVec = new int[n];int len = 0;
-    crescent(orderVec, n, len, n);
-
     clock_t time;
+    deleteVecVec(vector, n_instances);
 
     time = clock();
     for (int i = 0; i < n_instances; i++){
-        doHeap(vectorHeap[i], n);
         heapSort(vectorHeap[i], n); 
     }
     time = clock() - time;
     cout << "heapSort: " << ((double)time) / ((CLOCKS_PER_SEC / 1000)) << endl;
-    
-    for (int i = 0; i < n_instances; i++){
-        if(!checkOrder(vectorHeap[i], orderVec, n)){
-            cout << "Nao ordenado corretamente\n";
-            break;
-        }
-    }
+
 
     time = clock();
     for (int i = 0; i < n_instances; i++){
@@ -309,27 +322,13 @@ int main(int argc, char *argv[])
     }
     time = clock() - time;
     cout << "quickSort: " << ((double)time) / ((CLOCKS_PER_SEC / 1000)) << endl;
-
-    for (int i = 0; i < n_instances; i++){
-        if(!checkOrder(vectorQuick[i], orderVec, n)){
-            cout << "Nao ordenado corretamente\n";
-            break;
-        }
-    }
-
+    
     time = clock();
     for (int i = 0; i < n_instances; i++){
         quickSort(vectorQuickR[i], n, true);
     }
     time = clock() - time;
     cout << "quickSortR: " << ((double)time) / ((CLOCKS_PER_SEC / 1000)) << endl;
-
-    for (int i = 0; i < n_instances; i++){
-        if(!checkOrder(vectorQuickR[i], orderVec, n)){
-            cout << "Nao ordenado corretamente\n";
-            break;
-        }
-    }
 
     time = clock();
     for (int i = 0; i < n_instances; i++){
@@ -338,49 +337,52 @@ int main(int argc, char *argv[])
     time = clock() - time;
     cout << "introSort: " << ((double)time) / ((CLOCKS_PER_SEC / 1000)) << endl;  
 
+
     for (int i = 0; i < n_instances; i++){
-        if(!checkOrder(vectorIntro[i], orderVec, n)){
-            cout << "Nao ordenado corretamente\n";
-            break;
+        insertsort(vectorOrder[i], 0, n-1);
+    }
+
+    for (int i = 0; i < n_instances; i++){
+        if(!checkOrder(vectorHeap[i], vectorOrder[i], n)){
+            cout << "Heap Nao ordenado corretamente\n";
+            return 1;
+        }
+    }
+
+    deleteVecVec(vectorHeap, n_instances);
+
+    for (int i = 0; i < n_instances; i++){
+        if(!checkOrder(vectorQuick[i], vectorOrder[i], n)){
+            cout << "QuickS Nao ordenado corretamente\n";
+            return 1;
+        }
+    }
+
+    deleteVecVec(vectorQuick, n_instances);
+
+
+    for (int i = 0; i < n_instances; i++){
+        if(!checkOrder(vectorQuickR[i], vectorOrder[i], n)){
+            cout << "QuickR Nao ordenado corretamente\n";
+            return 1;
+        }
+    }
+
+    deleteVecVec(vectorQuickR, n_instances);
+
+
+    for (int i = 0; i < n_instances; i++){
+        if(!checkOrder(vectorIntro[i], vectorOrder[i], n)){
+            cout << "Intro Nao ordenado corretamente\n";
+            return 1;
         }
     }  
 
+    deleteVecVec(vectorIntro, n_instances);
+    deleteVecVec(vectorOrder, n_instances);
 
 
 
-
-      /*  int *vectorHeap = new int[max];
-        if(vectorHeap == NULL) cout << "Fail" << endl;
-        int *vectorQuick = new int[max];
-        if(vectorQuick == NULL) cout << "Fail" << endl;
-        int *vectorQuickRandom = new int[max];
-        if(vectorQuickRandom == NULL) cout << "Fail" << endl;
-        int *vectorIntro = new int[max];
-        if(vectorIntro == NULL) cout << "Fail" << endl;
-
-        copyVector(vector, vectorHeap, len);
-        copyVector(vector, vectorQuick, len);
-        copyVector(vector, vectorQuickRandom, len);
-        copyVector(vector, vectorIntro, len);
-
-
-        t = clock(); doHeap(vectorHeap, len); heapSort(vectorHeap, len); t = clock() - t;
-        cout << "heapSort: " << ((double)t) / ((CLOCKS_PER_SEC / 1000)) << endl;
-        if(print) printVector(vectorHeap, len);
-
-        t = clock(); quickSort(vectorQuick, len); t = clock() - t;
-        cout << "quickSort: " << (((double)t) / (CLOCKS_PER_SEC / 1000)) << endl;
-        if(print) printVector(vectorQuick, len);
-
-        t = clock(); quickSort(vectorQuickRandom, len, true); t = clock() - t;
-        cout << "quickSortRandom: " << (((double)t) / (CLOCKS_PER_SEC / 1000)) << endl;
-        if(print) printVector(vectorQuickRandom, len);
-
-        t = clock(); introSort(vectorIntro, len); t = clock() - t;
-        cout << "introSort: " << (((double)t) / (CLOCKS_PER_SEC / 1000)) << endl;
-        if(print) printVector(vectorIntro, len);
-*/
-
-
+    cout << "Todos os vetores estao ordenados corretamente\n";
     return 0;
 }
