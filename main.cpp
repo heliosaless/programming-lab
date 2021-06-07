@@ -1,15 +1,15 @@
 #include <iostream>
 using namespace std;
 
-int leftChild(int i){return 2*i + 1;}
-int rightChild(int i){return 2*i + 2;}
-int father(int i){return (i-1)/2;}
+/* VECTOR*/
 
 template <class T>
 void realocVector(T *&vector, int &max){
     max = 2*max;
     
     T *temp = new int[max];
+    if(temp == NULL) cout << "Fail Realoc" << endl;
+
     for (int i = 0; i < max/2; ++i) temp[i] = vector[i];
     
     delete[] vector;
@@ -33,27 +33,25 @@ void changeVector(T *vector, const int pos1, const int pos2){
     vector[pos2] = temp;
 }
 
+template <class T>
+void insertVector(T *&vector, int &max, int &len, const int value){
+    if (len == max)
+        realocVector(vector, max);
+
+    vector[len] = value;
+    len = len + 1;
+}
+
+template <class T>
+void copyVector(T* vector1, T* vector2, int len){
+    for (int i = 0; i < len; i++) vector2[i] = vector1[i];
+}
 
 /* HEAPSORT */
 
-template <class T>
-void upHeap(T *heap, const int index, const int len){
-    if(index == 0) return;
-
-    int fat = father(index);
-    int right = rightChild(fat);
-    int left = leftChild(fat);
-
-
-    int max;
-    if(right < len && heap[left] < heap[right]) max = right;
-    else max = left;
-
-    if(heap[fat] < heap[max]){
-        changeVector(heap, fat, max);
-        upHeap(heap, fat, len);
-    }
-}
+int leftChild(int i) { return 2 * i + 1; }
+int rightChild(int i) { return 2 * i + 2; }
+int father(int i) { return (i - 1) / 2; }
 
 template <class T>
 void downHeap(T *heap, const int index, const int len){
@@ -74,26 +72,11 @@ void downHeap(T *heap, const int index, const int len){
     }
 }
 
-template <class T>
-void insertHeap(T *&heap, int &max, int &len, const int value){
-    if(len == max) realocVector(heap, max);
-    
-    heap[len] = value;
-    if(len > 0) upHeap(heap, len, len);
-    len = len + 1;
+template<class T>
+void doHeap(T* vector, const int len){ // Comeca do pai do ultimo elemento. Não é folha.
+    for(int i = father(len-1); i >= 0; i--) downHeap(vector, i, len);
 }
 
-template <class T>
-void removeHeap(T *&heap, int &len){
-    if(len == 0){
-        cout << "Não é possivel remover!" << endl;
-        return;
-    }
-
-    changeVector(heap, 0, len-1);
-    len = len - 1;
-    downHeap(heap, 0, len);
-}
 
 template<class T>
 void heapSort(T* heap, const int len){
@@ -103,40 +86,45 @@ void heapSort(T* heap, const int len){
 
     changeVector(heap, 0, len - 1);
     downHeap(heap, 0, len - 1);
-    heapSort(heap, len - 1);    
+    heapSort(heap, len - 1);
+
 }
 
 /* QUICKSORT */
 #include <stdlib.h>
 
 int randomBetween(const int begin, const int end){
-    return rand() % end + begin; 
+    return begin + rand() % (end-begin+1); 
 }
 
 int pivot(const int begin, const int end, bool randomized = false){
     if(randomized) return randomBetween(begin, end);
-    return begin;
+    return (begin+end)/2;
 }
 
 template<class T>
 int partition(T* vector, const int begin, const int end, const int pivot){
+    //cout << "pivot: " << vector[pivot] << endl;
     int i = begin+1;
-    int p = pivot;
     int f = end;
-    changeVector(vector, begin, p);
+    changeVector(vector, begin, pivot);
+    //printVector(vector, 10);
 
-    while(i < f){
+    while(i <= f){
 
-        while (i < end && vector[i] <= vector[p]) i++;
+        while (i <= end && vector[i] <= vector[begin]) i++;
 
-        while (f > 0 && vector[f] > vector[p]) f--;
-        
-        if(i!=f) changeVector(vector, i, f);
+        while (f > begin && vector[f] > vector[begin]) f--;
+
+        if(i < f){
+            changeVector(vector, i, f);
+            //printVector(vector, 10);
+        }
         
     }
-
     changeVector(vector, begin, f);
-
+    //printVector(vector, 10);
+    //cout << "-----------------" << endl;
     return f;
 }
 
@@ -152,24 +140,32 @@ void quicksort_(T* vector, const int begin, const int end, bool randomized){
 }
 
 template<class T>
-void quicksort(T* vector, const int len, bool randomized = false){
-    return quicksort_(vector, 0, len-1, randomized);
+void quickSort(T* vector, const int len, bool randomized = false){
+    quicksort_(vector, 0, len-1, randomized);
 }
 
 /* INTROSORT */
 template<class T>
 void insertsort(T* vector, const int begin, const int end){
-
+    int i,j;
+    for(i = begin+1; i <= end; i++){
+        j = i - 1;
+        while(j >= begin && vector[j+1] < vector[j]){
+            changeVector(vector, j, j+1);
+            j = j - 1;
+        }
+        //printVector(vector, end - begin + 1);
+    }
 }
 
 int lg(int x){
     int c = 0;
-    while((x >> 1)) c++;
+    while((x = x >> 1) >= 1) c++;
     return c;
 }
 
 template<class T>
-void introsort_(T* vector, const int begin, const int end, const int rec_limit = -1, bool randomized = false){
+void introsort_(T* vector, const int begin, const int end, const int rec_limit, bool randomized){
     if (end <= begin) return;
 
     if(rec_limit == 0) return insertsort(vector, begin, end);
@@ -183,33 +179,208 @@ void introsort_(T* vector, const int begin, const int end, const int rec_limit =
 }
 
 template <class T>
-void introsort(T *vector, const int len, const int rec_limit=-1, bool randomized = false){
-    if(rec_limit == -1) return introsort_(vector, 0, len-1, 0, randomized);
-    else return introsort_(vector, 0, len-1, rec_limit, randomized);
+void introSort(T *vector, const int len, const int rec_limit=-1, bool randomized = false){
+    if(rec_limit == -1) introsort_(vector, 0, len - 1, 2 * lg(len), randomized);
+    else introsort_(vector, 0, len-1, rec_limit, randomized);
 }
 
 /* INSTANCES */
 
-int main()
+template<class T>
+void worstcase_(T* vector, const int begin, const int end, const int i){
+    if(end < begin) return;
+
+    int pivot_ = pivot(begin, end);
+    vector[pivot_] = i;
+    changeVector(vector, begin, pivot_);
+    worstcase_(vector, begin+1, end, i+1);
+    changeVector(vector, begin, pivot_);
+}
+
+template <class T>
+void worst(T* &vector, int &max, int &len, const int n){
+    for (int i = 0; i < n; i++) insertVector(vector, max, len, 0);
+    worstcase_(vector, 0, len - 1, 1);
+}
+
+template <class T>
+void crescent(T* &vector, int &max, int &len, const int n){
+    for (int i = 1; i <= n; i++) insertVector(vector, max, len, i);
+}
+
+template <class T>
+void decrescent(T* &vector, int &max, int &len, const int n){
+    for (int i = 0; i < n; i++) insertVector(vector, max, len, n-i);
+}
+
+template <class T>
+void random(T *&vector, int &max, int &len, const int n){
+    for (int i = 0; i < n; i++) insertVector(vector, max, len, randomBetween(1, n));
+}
+
+template<class T>
+bool checkOrder(T* vector, T* orderVec, int n){
+    for(int i = 0; i < n; i++) if(orderVec[i]!=vector[i]) return false;
+
+    return true;
+}
+
+#include <time.h>
+
+int main(int argc, char *argv[])
 {
+    if(argc != 4){ cout << "Entrada invalida\n"; return 1;}
+
+    int n = atoi(argv[2]), n_instances = atoi(argv[3]);
+    int **vector = new int*[n_instances];
+
+    for (int i = 0; i < n_instances; i++){
+        int max = 1, len = 0;
+        int *vector_aux = new int[max];
+
+        switch((argv[1])[0]){
+            case 'A':
+                random(vector_aux, max, len, n);
+                break;
+            case 'C':
+                crescent(vector_aux, max, len, n);
+                break;
+            case 'D':
+                decrescent(vector_aux, max, len, n);
+                break;
+            case 'P':
+                worst(vector_aux, max, len, n);
+                break;
+            default:
+                cout << "Tipo de instancia invalida\n";
+                return 1;
+        }
+
+        vector[i] = vector_aux;
+    }
+
+
+    int **vectorHeap = new int*[n_instances];
+    int **vectorQuick = new int*[n_instances];
+    int **vectorQuickR = new int*[n_instances];
+    int **vectorIntro = new int*[n_instances];
+
+    for (int i = 0; i < n_instances; i++){
+        int *vectorHeap_aux = new int[n];
+        copyVector(vector[i], vectorHeap_aux, n);
+        vectorHeap[i] = vectorHeap_aux;
+
+        int *vectorQuick_aux = new int[n];
+        copyVector(vector[i], vectorQuick_aux, n);
+        vectorQuick[i] = vectorQuick_aux;
+
+        int *vectorQuickR_aux = new int[n];
+        copyVector(vector[i], vectorQuickR_aux, n);
+        vectorQuickR[i] = vectorQuickR_aux;
+
+        int *vectorIntro_aux = new int[n];
+        copyVector(vector[i], vectorIntro_aux, n);
+        vectorIntro[i] = vectorIntro_aux;
+    }
+
+    int *orderVec = new int[n];int len = 0;
+    crescent(orderVec, n, len, n);
+
+    clock_t time;
+
+    time = clock();
+    for (int i = 0; i < n_instances; i++){
+        doHeap(vectorHeap[i], n);
+        heapSort(vectorHeap[i], n); 
+    }
+    time = clock() - time;
+    cout << "heapSort: " << ((double)time) / ((CLOCKS_PER_SEC / 1000)) << endl;
     
-    int max = 1, len = 0;
-    int* heap = new int[max];
+    for (int i = 0; i < n_instances; i++){
+        if(!checkOrder(vectorHeap[i], orderVec, n)){
+            cout << "Nao ordenado corretamente\n";
+            break;
+        }
+    }
 
-    insertHeap(heap, max, len, 10);
-    insertHeap(heap, max, len, 5);
-    insertHeap(heap, max, len, 3);
-    insertHeap(heap, max, len, 2);
-    insertHeap(heap, max, len, 4);
+    time = clock();
+    for (int i = 0; i < n_instances; i++){
+        quickSort(vectorQuick[i], n);
+    }
+    time = clock() - time;
+    cout << "quickSort: " << ((double)time) / ((CLOCKS_PER_SEC / 1000)) << endl;
 
-    printVector(heap, len);
+    for (int i = 0; i < n_instances; i++){
+        if(!checkOrder(vectorQuick[i], orderVec, n)){
+            cout << "Nao ordenado corretamente\n";
+            break;
+        }
+    }
 
-    //heapSort(heap, len);
-    //quicksort(heap, len);
-    printVector(heap, len);
+    time = clock();
+    for (int i = 0; i < n_instances; i++){
+        quickSort(vectorQuickR[i], n, true);
+    }
+    time = clock() - time;
+    cout << "quickSortR: " << ((double)time) / ((CLOCKS_PER_SEC / 1000)) << endl;
 
-    cout << lg(4);
+    for (int i = 0; i < n_instances; i++){
+        if(!checkOrder(vectorQuickR[i], orderVec, n)){
+            cout << "Nao ordenado corretamente\n";
+            break;
+        }
+    }
 
-    delete[] heap;
+    time = clock();
+    for (int i = 0; i < n_instances; i++){
+        introSort(vectorIntro[i], n);
+    }
+    time = clock() - time;
+    cout << "introSort: " << ((double)time) / ((CLOCKS_PER_SEC / 1000)) << endl;  
+
+    for (int i = 0; i < n_instances; i++){
+        if(!checkOrder(vectorIntro[i], orderVec, n)){
+            cout << "Nao ordenado corretamente\n";
+            break;
+        }
+    }  
+
+
+
+
+
+      /*  int *vectorHeap = new int[max];
+        if(vectorHeap == NULL) cout << "Fail" << endl;
+        int *vectorQuick = new int[max];
+        if(vectorQuick == NULL) cout << "Fail" << endl;
+        int *vectorQuickRandom = new int[max];
+        if(vectorQuickRandom == NULL) cout << "Fail" << endl;
+        int *vectorIntro = new int[max];
+        if(vectorIntro == NULL) cout << "Fail" << endl;
+
+        copyVector(vector, vectorHeap, len);
+        copyVector(vector, vectorQuick, len);
+        copyVector(vector, vectorQuickRandom, len);
+        copyVector(vector, vectorIntro, len);
+
+
+        t = clock(); doHeap(vectorHeap, len); heapSort(vectorHeap, len); t = clock() - t;
+        cout << "heapSort: " << ((double)t) / ((CLOCKS_PER_SEC / 1000)) << endl;
+        if(print) printVector(vectorHeap, len);
+
+        t = clock(); quickSort(vectorQuick, len); t = clock() - t;
+        cout << "quickSort: " << (((double)t) / (CLOCKS_PER_SEC / 1000)) << endl;
+        if(print) printVector(vectorQuick, len);
+
+        t = clock(); quickSort(vectorQuickRandom, len, true); t = clock() - t;
+        cout << "quickSortRandom: " << (((double)t) / (CLOCKS_PER_SEC / 1000)) << endl;
+        if(print) printVector(vectorQuickRandom, len);
+
+        t = clock(); introSort(vectorIntro, len); t = clock() - t;
+        cout << "introSort: " << (((double)t) / (CLOCKS_PER_SEC / 1000)) << endl;
+        if(print) printVector(vectorIntro, len);
+*/
+
+
     return 0;
 }
