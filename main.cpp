@@ -206,7 +206,7 @@ void introsort_(T* vector, const int begin, const int end, const int rec_limit, 
 
 template <class T>
 void introSort(T *vector, const int len, const int rec_limit=-1, bool randomized = false, bool insert=false){
-    if(insert && len <= 32) insertsort(vector, 0, len-1);
+    if(insert && len <= 24) insertsort(vector, 0, len-1);
     else{ 
         if(rec_limit == -1) introsort_(vector, 0, len - 1, 2 * lg(len), randomized);
         else introsort_(vector, 0, len-1, rec_limit, randomized);
