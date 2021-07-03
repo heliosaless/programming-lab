@@ -84,8 +84,9 @@ void knp(const char* T, const char* P, int* O, int &size){
 
 }
 
+#include <fstream>
 
-int main()
+int main(int argc, char* argv[])
 {
 	const char *T = "o sol nao e sol";
 	const char *P = "sol";
@@ -99,6 +100,19 @@ int main()
 
 	knp(T,P,O2, size2);
 	printVec(O2, size2, "vector O knp: ");
+
+
+	ifstream arq(argv[1]);
+	if(!arq.is_open()) cout << "Error opening file" << endl;
+	else{
+		for(;;){
+			char c = arq.get(); if(arq.eof()) break;
+			cout << c << endl;
+		}
+		//int i,j; arq >> i; arq >> j;
+		//if(arq.eof()) cout << "EOF\n";
+	}
+
 
 
 	return 0;
