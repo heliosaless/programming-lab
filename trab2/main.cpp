@@ -86,9 +86,39 @@ void knp(const char* T, const char* P, int* O, int &size){
 
 #include <fstream>
 
+bool readTxt(char* file, char* T){
+	ifstream arq(file);
+	if(!arq.is_open()) return false;
+	else{
+		for(int i = 0;;i++){
+			if(arq.eof()) break;
+			char c = arq.get(); 
+			T[i] = c;
+		}
+	}
+
+	arq.close();
+	return true;
+}
+
+bool writeTxt(char* file, const char* T){
+	ofstream arq(file);
+	if(!arq.is_open()) return false;
+	else{
+		for(int i = 0;i<sizeCharVec(T);i++){
+			cout << T[i];
+			arq << T[i]; 
+		}
+	}
+	return true;
+}
+
 int main(int argc, char* argv[])
 {
-	const char *T = "o sol nao e sol";
+	char *T = new char[15];
+	readTxt(argv[1], T);
+	printVec(T, 15);
+
 	const char *P = "sol";
 	int len = sizeCharVec(P);
 	int *O1 = new int[5];
@@ -101,17 +131,7 @@ int main(int argc, char* argv[])
 	knp(T,P,O2, size2);
 	printVec(O2, size2, "vector O knp: ");
 
-
-	ifstream arq(argv[1]);
-	if(!arq.is_open()) cout << "Error opening file" << endl;
-	else{
-		for(;;){
-			char c = arq.get(); if(arq.eof()) break;
-			cout << c << endl;
-		}
-		//int i,j; arq >> i; arq >> j;
-		//if(arq.eof()) cout << "EOF\n";
-	}
+	writeTxt(argv[2], P);
 
 
 
