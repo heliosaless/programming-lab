@@ -6,14 +6,11 @@ using namespace std;
 
 struct Noh{
 	int value;
-	struct Noh* esq;
-	struct Noh* dir;
-};
-
-struct Noh2{
-	int value;
-	int esq;
-	int Noh* dir;
+	//struct Noh* esq;
+	//struct Noh* dir;
+	int idx_esq;
+	int idx_dir;
+	int idx;
 };
 
 
@@ -29,7 +26,7 @@ void realocVector(T *&vector, int &max){
     
     delete[] vector;
     vector = temp;
-    cout << "vector realocada! Novo tamanho: " << max << "\n";
+    //cout << "vector realocada! Novo tamanho: " << max << "\n";
 }
 
 template <class T>
@@ -108,15 +105,21 @@ T* removeHeap(T* heap, int &len){
 
 /*HUFFTREE*/
 template <class T>
-void constructTree(T* &heap, int& max, int& len, const long int* v){
+void constructTree(T* &heap, T* &writeVec, int& max, int& len, int& max2, int& len2, const long int* v){
 
+	int index = 0;
 	for (int i = 0; i < 256; i++)
 		if(v[i] > 0){ 
 			T n;
 			n.value = v[i];
-			n.esq = NULL;
-			n.dir = NULL;
+			//n.esq = NULL;
+			//n.dir = NULL;
+			n.idx_esq = -2;
+			n.idx_dir = -2;
+			n.idx = index;
+			index++;
 			addHeap(heap, max, len, n);
+			insertVector(writeVec, max2, len2, n);
 		}
 	
 	while(len > 1){
@@ -124,11 +127,16 @@ void constructTree(T* &heap, int& max, int& len, const long int* v){
 		T* y = removeHeap(heap, len);
 
 		T z;
-		z.dir = x;
-		z.esq = y;
+		//z.dir = x;
+		//z.esq = y;
 		z.value = x->value + y->value;
-
+		z.idx_esq = x->idx;
+		z.idx_dir = y->idx;
+		z.idx = index;
+		index++;
 		addHeap(heap, max, len, z);
+		insertVector(writeVec, max2, len2, z);
+
 	}
 
 }
@@ -159,15 +167,32 @@ bool readTxt(const char* file, long int* v){
 }
 
 template <class T>
-bool writeTxt(char* file, T* preamb){
+bool writeVector(const char* file, T* writeVec, int len2){
 	ofstream arq(file);
 	if(!arq.is_open()) return false;
 	else{
-
+		arq.put(len2);
+		char *fim = (char*)(writeVec+len2);
+		for (char* p = (char*)writeVec; p < fim; ++p)
+			arq.put(*p);
 	}
 	return true;
 }
 
+template <class T>
+bool readVector(const char* file, T* readVec, int &len){
+	ifstream arq(file);
+	if(!arq.is_open()) return false;
+	else{
+		len = arq.get();
+		char *fim = (char*)(readVec+len);
+		for (char* p = (char*)readVec; p < fim; ++p){
+			*p = arq.get();
+			//if(arq.eof()) return true;
+		}
+	}
+	return true;
+}
 
 int main(int argc, char const *argv[])
 {
@@ -179,15 +204,26 @@ int main(int argc, char const *argv[])
 	int max = 1;
 	int len = 0;
 	struct Noh* heap = new Noh[max];	
-	constructTree(heap, max, len, v);
-	printTree(heap);
 
-	int n = 0;
+	int max2 = 0;
+	int len2 = 0;
 	for (int i = 0; i < 256; ++i)
-		if(v[i] >= 0)	n++;
+		if(v[i] > 0)	max2++;
+	
+	cout << max2 << endl << endl;
+	max2 = max2 *2 - 1;
+	struct Noh* writeVec = new Noh[max2];
+	constructTree(heap, writeVec, max, len, max2, len2, v);
 
-	struct Noh2* preamb = new Noh2[2*n-1];
-	writeTxt(argv[2], preamb);
+	cout << len2 << endl;
+	writeVector(argv[2], writeVec, len2);
+	printVector(writeVec, len2);
+	
+	int len3 = 0;
+	struct Noh* readVec = new Noh[max2];
+	readVector(argv[2], readVec, len3);
+	cout << len3 << endl;
+	printVector(readVec, len3);
 
 	return 0;
 }
