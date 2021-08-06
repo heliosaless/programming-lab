@@ -1,11 +1,13 @@
 #include <iostream>
 #include <fstream>
+#include <string.h>
+#include <time.h>
 
 using namespace std;
 
 struct Noh
 {
-	char symbol;
+	unsigned char symbol;
 	int value;
 	int idx_esq;
 	int idx_dir;
@@ -51,22 +53,10 @@ void changeVector(T *vector, const int pos1, const int pos2)
 }
 
 template <class T>
-void printVector(T *vector, const int len)
-{
-	for (int i = 0; i < len; ++i)
-		cout << vector[i].symbol << "\t";
-	cout << endl;
-	for (int i = 0; i < len; ++i)
-		cout << vector[i].idx << "\t";
-	cout << endl;
-	for (int i = 0; i < len; ++i)
-		cout << vector[i].value << "\t";
-	cout << endl;
-	for (int i = 0; i < len; ++i)
-		cout << vector[i].idx_esq << "\t";
-	cout << endl;
-	for (int i = 0; i < len; ++i)
-		cout << vector[i].idx_dir << "\t";
+void printVector(T *vector, const int len){
+	for (int i = 0; i < len; ++i){
+		cout << vector[i];
+	}
 	cout << endl;
 }
 
@@ -131,16 +121,14 @@ T *removeHeap(T *heap, int &len)
 }
 
 /*HUFFTREE*/
-template <class T>
-void constructTree(T *&heap, T *&writeVec, int &maxHeap, int &lenHeap, int &maxVec, int &lenVec, const long int *v)
+void constructTree(Noh *&heap, Noh *&writeVec, int &maxHeap, int &lenHeap, int &maxVec, int &lenVec, const long int *v)
 {
-
 	int index = 0;
-	for (int i = 0; i < 256; i++)
+	for (unsigned int i = 0; i < 256; i++)
 		if (v[i] > 0)
 		{
-			T n;
-			n.symbol = (char)i;
+			Noh n;
+			n.symbol = (unsigned char)i;
 			n.value = v[i];
 			n.idx_esq = -1;
 			n.idx_dir = -1;
@@ -152,10 +140,10 @@ void constructTree(T *&heap, T *&writeVec, int &maxHeap, int &lenHeap, int &maxV
 
 	while (lenHeap > 1)
 	{
-		T *x = removeHeap(heap, lenHeap);
-		T *y = removeHeap(heap, lenHeap);
+		Noh *x = removeHeap(heap, lenHeap);
+		Noh *y = removeHeap(heap, lenHeap);
 
-		T z;
+		Noh z;
 		z.symbol = '?';
 		z.value = x->value + y->value;
 
@@ -177,18 +165,20 @@ void constructTree(T *&heap, T *&writeVec, int &maxHeap, int &lenHeap, int &maxV
 	}
 }
 
-#include <string.h>
-template <class T>
-void constructCodVec(T *treeVec, char **codVec, int idx, char *acc)
+
+void constructCodVec(Noh *treeVec, char **codVec, int idx, char *acc)
 {
-	T t = treeVec[idx];
+	Noh t = treeVec[idx];
+
 	if (t.idx_esq == -1 && t.idx_dir == -1)
 		strcpy(codVec[(int)t.symbol], acc);
+
 	if (t.idx_esq != -1)
 	{
 		constructCodVec(treeVec, codVec, t.idx_esq, strcat(acc, "1"));
 		acc[strlen(acc) - 1] = '\0';
 	}
+
 	if (t.idx_dir != -1)
 	{
 		constructCodVec(treeVec, codVec, t.idx_dir, strcat(acc, "0"));
@@ -240,19 +230,20 @@ bool readTxtT(const char *file, char *text)
 	return true;
 }
 
-template <class T>
-bool writePreamble(const char *file, T *writeVec, int len, int symbols, char *text, char **codVec)
+bool writeCompress(const char *file, Noh *writeVec, int len, int symbols, char *text, char **codVec)
 {
 	ofstream arq(file);
 	if (!arq.is_open())
 		return false;
 	else
 	{
+		if(symbols == 0){return true;}
 		char *v = (char *)&len;
 		for (int i = 0; i < sizeof(int); ++i)
 			arq.put(v[i]);
 
-		 char *fim = ( char *)(writeVec + len);
+
+		char *fim = (char *)(writeVec + len);
 		for ( char *p = ( char *)writeVec; p < fim; ++p)
 		{
 			arq.put(*p);
@@ -267,54 +258,9 @@ bool writePreamble(const char *file, T *writeVec, int len, int symbols, char *te
 		unsigned char byte = 0;
 		for (int i = 0; i < symbols; i++)
 		{
-			char toWrite = text[i];
+			unsigned char toWrite = text[i];
 			char *bitsToWrite = codVec[(int)toWrite];
-			for (int i = 0; bitsToWrite[i] != '\0'; i++)
-			{
-				if (writtenBits < 8)
-				{
-					char byte_aux = bitsToWrite[i] - 48;
-					byte <<= 1;
-					byte = byte_aux | byte;
-					writtenBits++;
-					if (writtenBits == 8)
-					{
-						cout << "writen: "<< (int)byte << endl;
-						arq.put(byte);
-						byte = 0;
-						writtenBits = 0;
-					}
-				}
-			}
-		}
-
-		if (writtenBits != 0)
-		{
-			while (writtenBits++ != 8)
-				byte <<= 1;
-			cout << "writen: " << (int)byte << endl;
-			arq.put(byte);
-			byte = 0;
-			writtenBits = 0;
-		}
-	}
-	return true;
-}
-
-bool writeCompressedFile(const char *file, char *text, char **codVec, int symbols)
-{
-	fstream arq(file);
-	if (!arq.is_open())
-		return false;
-	else
-	{
-		arq.seekg(0, ios::end);
-		int writtenBits = 0;
-		unsigned char byte = 0;
-		for (int i = 0; i < symbols; i++)
-		{
-			char toWrite = text[i];
-			char *bitsToWrite = codVec[(int)toWrite];
+			
 			for (int i = 0; bitsToWrite[i] != '\0'; i++)
 			{
 				if (writtenBits < 8)
@@ -343,12 +289,13 @@ bool writeCompressedFile(const char *file, char *text, char **codVec, int symbol
 			byte = 0;
 			writtenBits = 0;
 		}
+
 	}
 	return true;
 }
 
-template <class T>
-bool readPreamble(const char *file, T *&readVec, int &len, int &symbols, char *&decompress)
+
+bool readCompress(const char *file, Noh *&readVec, int &len, int &symbols, char *&decompress)
 {
 	ifstream arq(file);
 	if (!arq.is_open())
@@ -429,48 +376,55 @@ bool writeDecompress(const char *file, char *text, const int symbols)
 }
 
 /*
-bool readTextFile(const char *file, Noh* vectorRead, const int len, const int symbols){
-  ifstream arq(file);
-	if (!arq.is_open())
-		return false;
-	else
+void printNohs(Noh *vector, const int len)
+{
+	for (int i = 0; i < len; ++i)
 	{
-    arq.seekg()
-    int readBits = 0;
-    int numBytes = symbols;
-    int actual_idx = len-1;
-    while(numBytes-- > 0){
-    unsigned char b = arq.get();
-    if(arq.eof()) break;
-    while(readBits < 8){
-      if(b>128){actual_idx = vectorRead[actual_idx].idx_esq;}
-      else{actual_idx = vectorRead[actual_idx].idx_dir;}
-      if(vectorRead[actual_idx].idx_esq == -1 && vectorRead[actual_idx].idx_dir == -1 )
-        {cout << vectorRead[actual_idx].symbol; actual_idx = len-1;}
-      b <<= 1;
-      readBits += 1;
-    }
-    readBits = 0;
+		cout << vector[i].symbol << " ";
+		if (i % 10 == 0)
+			cout << endl;
 	}
-}
-	return true;
-
+	cout << endl;
+	for (int i = 0; i < len; ++i)
+	{
+		cout << vector[i].idx << " ";
+		if (i % 10 == 0)
+			cout << endl;
+	}
+	cout << endl;
+	for (int i = 0; i < len; ++i)
+	{
+		cout << vector[i].value << " ";
+		if (i % 10 == 0)
+			cout << endl;
+	}
+	cout << endl;
+	for (int i = 0; i < len; ++i)
+	{
+		cout << vector[i].idx_esq << " ";
+		if (i % 10 == 0)
+			cout << endl;
+	}
+	cout << endl;
+	for (int i = 0; i < len; ++i)
+	{
+		cout << vector[i].idx_dir << " ";
+		if (i % 10 == 0)
+			cout << endl;
+	}
+	cout << endl;
 }*/
-
-#include <cstdlib>
-#include <ctime>
 
 int main(int argc, char const *argv[])
 {
-	if (argc < 4)
-		return 0;
+	if (argc < 4) return 0;
 	clock_t time;
 	if (strcmp(argv[1], "-c") == 0)
 	{
 		time = clock();
 		long int *v = new long int[256];
 		char **codVec = new char *[256];
-		readTxtV(argv[2], v);
+		readTxtV(argv[2], v); // Le vetor de ocorrencias
 
 		int maxHeap = 1;
 		int lenHeap = 0;
@@ -480,64 +434,77 @@ int main(int argc, char const *argv[])
 		int lenVector = 0;
 		int symbols = 0;
 
+		int rem; // Util para o caso que tem apenas 1 caractere.
 		for (int i = 0; i < 256; ++i)
-			if (v[i] > 0)
-			{
+			if (v[i] > 0){
+				rem = i;  
 				maxVector++;
 				symbols += v[i];
 			}
 
+		if(maxVector == 1){
+			if(rem < 255) v[rem+1] = 1;
+			else v[rem-1] = 1;
+			maxVector ++;
+		}
+
 		for (int i = 0; i < 256; i++)
 		{
 			codVec[i] = NULL;
-			if (v[i] > 0)
-			{
+			if (v[i] > 0){
 				codVec[i] = new char[symbols];
 				strcpy(codVec[i], "");
 			}
 		}
 
 		char *text = new char[symbols];
-		readTxtT(argv[2], text);
+		readTxtT(argv[2], text); // Le o texto original
+		//printVector(text, symbols);  
 
-		maxVector = maxVector * 2 - 1;
+
+		if(maxVector != 0) maxVector = maxVector * 2 - 1;  // 2*n - 1
+
 		struct Noh *treeVec = new Noh[maxVector];
-		constructTree(heap, treeVec, maxHeap, lenHeap, maxVector, lenVector, v);
+		if(maxVector != 0) constructTree(heap, treeVec, maxHeap, lenHeap, maxVector, lenVector, v);
+		
+		//cout << lenVector << " " << symbols << endl;
+		//printNohs(treeVec, lenVector);
+		
+		if (maxVector != 0){
+			char *aux = new char[symbols];
+			strcpy(aux, "");
+		 	constructCodVec(treeVec, codVec, maxVector - 1, aux);
+		}
 
-		char *aux = new char[symbols];
-		strcpy(aux, "");
+		//for (int i = 0; i < 256; i++)
+		//	if (codVec[i] != NULL && strcmp(codVec[i], "") != 0)
+		//		cout << i << " " << codVec[i] << endl;
 
-		constructCodVec(treeVec, codVec, maxVector - 1, aux);
 
-		for (int i = 0; i < 256; i++)
-			if (codVec[i] != NULL && strcmp(codVec[i], "") != 0)
-				cout << i << " " << codVec[i] << endl;
-
-		cout << lenVector << " " << symbols << endl;
-		printVector(treeVec, lenVector);
-		writePreamble(argv[3], treeVec, lenVector, symbols, text, codVec);
+		writeCompress(argv[3], treeVec, lenVector, symbols, text, codVec);
 		time = clock() - time;
 		cout << "compress time: " << ((double)time) / ((CLOCKS_PER_SEC)) << endl;
 	}
 	else if (strcmp(argv[1], "-d") == 0)
 	{
 		time = clock();
+		
 		int len = 0;
 		int symbols = 0;
-		struct Noh *readVec;
 		char *decompress;
-		readPreamble(argv[2], readVec, len, symbols, decompress);
-		//cout << lenRead << " " << symbolsRead <<  endl;
-		//printVector(readVec, lenRead);
+		struct Noh *readVec;
+		
+		readCompress(argv[2], readVec, len, symbols, decompress);
+
+		//cout << len << " " << symbols <<  endl;
+		//printVector(readVec, len);
 
 		writeDecompress(argv[3], decompress, symbols);
 
 		time = clock() - time;
 		cout << "decompress time: " << ((double)time) / ((CLOCKS_PER_SEC)) << endl;
 	}
-	else
-	{
-	}
+	else{cout << "expected -c for compress or -d for decompress" << endl;}
 
 	return 0;
 }
