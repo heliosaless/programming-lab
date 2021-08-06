@@ -147,7 +147,9 @@ void constructTree(Noh *&heap, Noh *&writeVec, int &maxHeap, int &lenHeap, int &
 		z.symbol = '?';
 		z.value = x->value + y->value;
 
-		if (x->idx_esq == -1 && x->idx_dir == -1 && (y->idx_esq != -1 || y->idx_esq != -1))
+		z.idx_esq = y->idx;
+		z.idx_dir = x->idx;
+		/*if (x->idx_esq == -1 && x->idx_dir == -1 && (y->idx_esq != -1 || y->idx_esq != -1))
 		{
 			z.idx_esq = x->idx;
 			z.idx_dir = y->idx;
@@ -156,7 +158,7 @@ void constructTree(Noh *&heap, Noh *&writeVec, int &maxHeap, int &lenHeap, int &
 		{
 			z.idx_esq = y->idx;
 			z.idx_dir = x->idx;
-		}
+		}*/
 
 		z.idx = index;
 		index++;
@@ -280,7 +282,7 @@ bool writeCompress(const char *file, Noh *writeVec, int len, int symbols, char *
 			}
 		}
 
-		if (writtenBits != 0)
+		if (writtenBits != 8)
 		{
 			while (writtenBits++ != 8)
 				byte <<= 1;
@@ -304,8 +306,10 @@ bool readCompress(const char *file, Noh *&readVec, int &len, int &symbols, char 
 	{
 
 		char *v = (char *)&len;
-		for (unsigned int i = 0; i < sizeof(int); ++i)
+		for (unsigned int i = 0; i < sizeof(int); ++i){
 			v[i] = arq.get();
+			if(arq.eof()) return true;
+		}
 
 		readVec = new Noh[len];
 
@@ -375,46 +379,6 @@ bool writeDecompress(const char *file, char *text, const int symbols)
 	return true;
 }
 
-/*
-void printNohs(Noh *vector, const int len)
-{
-	for (int i = 0; i < len; ++i)
-	{
-		cout << vector[i].symbol << " ";
-		if (i % 10 == 0)
-			cout << endl;
-	}
-	cout << endl;
-	for (int i = 0; i < len; ++i)
-	{
-		cout << vector[i].idx << " ";
-		if (i % 10 == 0)
-			cout << endl;
-	}
-	cout << endl;
-	for (int i = 0; i < len; ++i)
-	{
-		cout << vector[i].value << " ";
-		if (i % 10 == 0)
-			cout << endl;
-	}
-	cout << endl;
-	for (int i = 0; i < len; ++i)
-	{
-		cout << vector[i].idx_esq << " ";
-		if (i % 10 == 0)
-			cout << endl;
-	}
-	cout << endl;
-	for (int i = 0; i < len; ++i)
-	{
-		cout << vector[i].idx_dir << " ";
-		if (i % 10 == 0)
-			cout << endl;
-	}
-	cout << endl;
-}*/
-
 int main(int argc, char const *argv[])
 {
 	if (argc < 4) return 0;
@@ -459,16 +423,12 @@ int main(int argc, char const *argv[])
 
 		char *text = new char[symbols];
 		readTxtT(argv[2], text); // Le o texto original
-		//printVector(text, symbols);  
-
 
 		if(maxVector != 0) maxVector = maxVector * 2 - 1;  // 2*n - 1
 
 		struct Noh *treeVec = new Noh[maxVector];
 		if(maxVector != 0) constructTree(heap, treeVec, maxHeap, lenHeap, maxVector, lenVector, v);
 		
-		//cout << lenVector << " " << symbols << endl;
-		//printNohs(treeVec, lenVector);
 		
 		if (maxVector != 0){
 			char *aux = new char[symbols];
@@ -476,14 +436,12 @@ int main(int argc, char const *argv[])
 		 	constructCodVec(treeVec, codVec, maxVector - 1, aux);
 		}
 
-		//for (int i = 0; i < 256; i++)
-		//	if (codVec[i] != NULL && strcmp(codVec[i], "") != 0)
-		//		cout << i << " " << codVec[i] << endl;
 
 
 		writeCompress(argv[3], treeVec, lenVector, symbols, text, codVec);
 		time = clock() - time;
 		cout << "compress time: " << ((double)time) / ((CLOCKS_PER_SEC)) << endl;
+	
 	}
 	else if (strcmp(argv[1], "-d") == 0)
 	{
@@ -496,8 +454,6 @@ int main(int argc, char const *argv[])
 		
 		readCompress(argv[2], readVec, len, symbols, decompress);
 
-		//cout << len << " " << symbols <<  endl;
-		//printVector(readVec, len);
 
 		writeDecompress(argv[3], decompress, symbols);
 
