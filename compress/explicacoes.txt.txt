@@ -1,0 +1,2 @@
+compress programa -c [arquivo para comprimir] [arquivo de destino]
+decompress programa -d [arquivo para descomprimir] [arquivo de destino]
