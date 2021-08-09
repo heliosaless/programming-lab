@@ -1,0 +1,2 @@
+./programa -c [arq para comprimir] [arq de destino]
+./programa -d [arq para descomprimir] [arq de destino]
