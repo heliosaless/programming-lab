@@ -1,8 +1,8 @@
 // Nome: Helio Matheus Sales Silva
 // Matrícula: 400800
 
-#include <iostream>
-using namespace std;
+//#include <iostream>
+#include <new>
 template <typename TC, typename TV>
 class DicioAVL{
     public:
@@ -21,7 +21,6 @@ class DicioAVL{
 
     };
     void rot_esq(Noh* x){
-        Noh* f = x->father;
         Noh* y = x->right; 
         if(y == nullptr) return;
 
@@ -39,7 +38,6 @@ class DicioAVL{
     }
 
     void rot_dir(Noh* x){
-        Noh* f = x->father;
         Noh* y = x->left; 
         if(y == nullptr) return;
 
@@ -86,11 +84,19 @@ class DicioAVL{
     };
 
     DicioAVL():raiz(nullptr){}
-    ~DicioAVL(){} // Desaloca a memória dinamica
+    ~DicioAVL(){                // Desaloca a memória dinamica
+        if(raiz != nullptr) dealloc(raiz);
+    }
+
+    void dealloc(Noh *x){
+        if(x->left != nullptr) dealloc(x->left);
+        if(x->right != nullptr) dealloc(x->right);
+        delete x;
+    }
 
     Iterador inicio(){
         Noh* it = raiz;
-        while(it->left != nullptr) it = it->left;
+        while(it != nullptr && it->left != nullptr) it = it->left;
         
         Iterador i(it);
         return i;
@@ -99,7 +105,8 @@ class DicioAVL{
     Iterador fim() { Iterador i(nullptr); return i; }    
     
     Iterador inserir(TC c, TV v){
-        Noh* novo = new Noh{c, v, nullptr, nullptr, nullptr, 0};
+        Noh *novo = new (std::nothrow) Noh{c, v, nullptr, nullptr, nullptr, 0};
+        if(novo == nullptr) return fim();
 
         if(raiz == nullptr) raiz = novo;
         else inserirAVL_(raiz, nullptr, novo);
@@ -115,7 +122,6 @@ class DicioAVL{
             Iterador aux = i; ++aux;
             Noh* succ = aux.p;
 
-
             if (x->left != nullptr){          // Colocar o filho esquerdo do x como filho esquerdo do succ
                 x->left->father = succ;
                 succ->left = x->left;
@@ -125,8 +131,8 @@ class DicioAVL{
             if (succ != x->right){    
                 if (succ->right != nullptr){         // Colocar o filho direito do sucessor como filho do esquerdo do direito do x
                     succ->right->father = x->right;
-                    x->right->left = succ->right;
                 }   
+                x->right->left = succ->right;
 
                 x->right->father = succ;
                 succ->right = x->right;
@@ -142,12 +148,20 @@ class DicioAVL{
                     x->father->right = succ;
                 succ->father = x->father;
             }
-            removerAVL_(raiz, succ->father);
+
+            if(succ->right != nullptr){
+                Noh* it = succ->right;
+                while(it->left != nullptr) it = it->left;
+                removerAVL_(raiz, it);
+            }
+            else{
+                removerAVL_(raiz,succ);
+            }
+            
         }
         else{
-
             if (x->left != nullptr && x->right == nullptr){
-                if (x->father == nullptr){               // Verifica se estamos removendo raiz
+                if (x->father == nullptr){ // Verifica se estamos removendo raiz
                     raiz = x->left;
                     x->left->father = nullptr;
                 }else{
@@ -159,9 +173,8 @@ class DicioAVL{
                 }
             }
 
-            else if (x->left == nullptr && x->right != nullptr)
-            {
-                if (x->father == nullptr){               // Verifica se estamos removendo raiz
+            else if (x->left == nullptr && x->right != nullptr){
+                if (x->father == nullptr){ // Verifica se estamos removendo raiz
                     raiz = x->right;
                     x->right->father = nullptr;
                 }else{
@@ -173,19 +186,20 @@ class DicioAVL{
                 }
             }
 
-            else {
-                 if (x->father == nullptr)              // Verifica se estamos removendo raiz
+            else{
+                if (x->father == nullptr) // Verifica se estamos removendo raiz
                     raiz = nullptr;
-                else
-                {
+                else{
                     if (x->key <= x->father->key)
                         x->father->left = nullptr;
                     else
                         x->father->right = nullptr;
                 }
             }
-            removerAVL_(raiz, x->father);
+            removerAVL_(raiz, x);
         }
+
+        delete x;
     } 
 
     Iterador buscar(TC c){
@@ -201,17 +215,17 @@ class DicioAVL{
     } 
     private:
     
-    bool inserirAVL_(Noh* x, Noh *x_father, Noh *novo){
-        bool increased;
+    bool inserirAVL_(Noh* x, Noh *r_father, Noh *novo){
+        bool increased = false;
         
         if(x == nullptr){
 
-            novo->father = x_father;
-            if(x_father != nullptr && novo->key <= x_father->key) x_father->left = novo;
-            else if(x_father != nullptr && novo->key > x_father->key) x_father->right = novo;
+            novo->father = r_father;
+            if(r_father != nullptr && novo->key <= r_father->key) r_father->left = novo;
+            else if(r_father != nullptr && novo->key > r_father->key) r_father->right = novo;
             else {} 
 
-            increased = 1;
+            increased = true;
         }
 
         else if(novo->key <= x->key){
@@ -222,7 +236,7 @@ class DicioAVL{
                     Noh* y = x->right;
                     if(y->b == -1){ // Mais pesado na ponta, rotaciona x a direita
                         rot_dir(x);
-                        x->b = 0; y->b = 0; increased = 0;
+                        x->b = 0; y->b = 0; increased = false;
                     }
                     else if(y->b == 1){ //  Mais pesado no meio, rotacao dupla
                         Noh* z = y->right;
@@ -232,20 +246,20 @@ class DicioAVL{
                         rot_esq(y);
                         rot_dir(x);
                         z->b = 0;
-                        increased = 0;
+                        increased = false;
                     }
-                    else{cout << "Teoricamente isso nunca acontece\n";}
+                    else{}
                     
                 } 
 
                 else if( x->b == 0 ){
                     x->b = -1;
-                    increased = 1;
+                    increased = true;
                 }
 
                 else {
                     x->b = 0;
-                    increased = 0;
+                    increased = false;
                 }
             }
         }
@@ -256,19 +270,19 @@ class DicioAVL{
 
                 if( x->b == -1 ){
                     x->b = 0;
-                    increased = 0;
+                    increased = false;
                 } 
 
                 else if( x->b == 0 ){
                     x->b = 1;
-                    increased = 1;
+                    increased = true;
                 }
 
                 else {
                     Noh* y = x->right;
                     if(y->b == 1){
                         rot_esq(x);
-                        x->b = 0; y->b = 0; increased = 0;
+                        x->b = 0; y->b = 0; increased = false;
                     }
                     else if(y->b == -1){
                         Noh* z = y->left;
@@ -278,9 +292,9 @@ class DicioAVL{
                         rot_dir(y);
                         rot_esq(x);
                         z->b = 0;
-                        increased = 0;
+                        increased = false;
                     }
-                    else{cout << "Teoricamente isso nunca acontece\n";}
+                    else{}
                 }
             }
         }
@@ -290,22 +304,82 @@ class DicioAVL{
 
 
 
-    bool removerAVL_(Noh* r, Noh* x){  
-        bool decreased;
-        
-        if(r->key == x->key){
-            decreased = 1;
+    bool removerAVL_(Noh* x, Noh* i){  
+        bool decreased = false;
+        if(x == nullptr){
+            decreased = true;
         }
-        else if(x->key < r->key) {
-            decreased = removerAVL_(r->left, x);
+        else if(i->key < x->key) {
+            decreased = removerAVL_(x->left, i);
             if(decreased){
 
+                if(x->b == -1){
+                    x->b = 0;
+                    decreased = true;
+                }
+
+                else if(x->b == 0){
+                    x->b = 1;
+                    decreased = false;
+                }
+                
+                else{
+                    Noh* y = x->right;
+                    if(y->b == 1){
+                        rot_esq(x);
+                        x->b = 0; y->b = 0; decreased = true;
+                    }
+                    else if(y->b == -1){
+                        Noh* z = y->left;
+                        if(z->b == 0) { x->b = 0; y->b = 0; }
+                        else if(z->b == 1)  { x->b = -1; y->b = 0; }
+                        else { x->b = 0; y->b = 1;}
+                        rot_dir(y);
+                        rot_esq(x);
+                        z->b = 0;
+                        decreased = true;
+                    }
+                    else{
+                        rot_esq(x);
+                        x->b = 1; y->b = -1; decreased = false;
+                    }
+                }
             }
         }
         else {
-            decreased = removerAVL_(r->right, x);
+            decreased = removerAVL_(x->right, i);
             if(decreased){
+                if(x->b == 1){
+                    x->b = 0;
+                    decreased = true;
+                }
+
+                else if(x->b == 0){
+                    x->b = -1;
+                    decreased = false;
+                }
                 
+                else{
+                    Noh* y = x->left;
+                    if(y->b == -1){
+                        rot_dir(x);
+                        x->b = 0; y->b = 0; decreased = true;
+                    }
+                    else if(y->b == 1){
+                        Noh* z = y->right;
+                        if(z->b == 0) { x->b = 0; y->b = 0; }
+                        else if(z->b == 1)  { x->b = -1; y->b = 0; }
+                        else { x->b = 0; y->b = 1;}
+                        rot_esq(y);
+                        rot_dir(x);
+                        z->b = 0;
+                        decreased = true;
+                    }
+                    else{
+                        rot_dir(x);
+                        x->b = -1; y->b = 1; decreased = false;
+                    }
+                }
             }
         }
 
@@ -314,22 +388,24 @@ class DicioAVL{
 
 
 };
-
-int main(int argc, char const *argv[])
+/*
+int main()
 {
 
     DicioAVL<int,char> D; int i;
 
     for (i = 48; i < 58; ++i) if (D.inserir(i, (char) i) == D.fim()) return 1;
 
-    cout << D.obter_raiz()->key << endl;
-   
     for (auto it = D.inicio(); it != D.fim(); ++it)
-        cout << "O codigo de '" << it.valor() << "' eh " << it.chave() << '\n';
+        std::cout << "O codigo de '" << it.valor() << "' eh " << it.chave() << '\n';
 
-    /*for (i = 48; i < 58; ++i){
+    for (i = 48; i < 58; ++i){
         auto it = D.buscar(i); if (it == D.fim()) return 1; else D.remover(it);
-    }*/
+    }
+
+    for (auto it = D.inicio(); it != D.fim(); ++it)
+        std::cout << "O codigo de '" << it.valor() << "' eh " << it.chave() << '\n';
 
     return 0;
 }
+*/
