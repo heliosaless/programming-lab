@@ -116,19 +116,48 @@ class DicioAVL{
 
     void remover(Iterador i){
         Noh* x = i.p;
-        if (x->left != nullptr && x->right != nullptr)  // copiar o valor do suc e usar o iterador do suc para remover o no com 1 filho no removeavl
+        if (x->left != nullptr && x->right != nullptr)  
         {
             Iterador aux = i; ++aux;
             Noh* succ = aux.p;
-            TC key = succ->chave;
-            TV value = succ->valor;
 
-            removerAVL_(aux);
+            if (x->left != nullptr){          // Colocar o filho esquerdo do x como filho esquerdo do succ
+                x->left->father = succ;
+                succ->left = x->left;
+            }
 
-            x->chave = key;
-            x->valor = value;
+            // Essas instruções não fazem sentido para succ == x->right
+            if (succ != x->right){    
+                if (succ->right != nullptr){         // Colocar o filho direito do sucessor como filho do esquerdo do direito do x
+                    succ->right->father = x->right;
+                }   
+                x->right->left = succ->right;
+
+                x->right->father = succ;
+                succ->right = x->right;
+            }
+
+            Noh* temp = succ->father;
+
+            if (x->father == nullptr){            // Verifica se estamos removendo a raiz
+                raiz = succ;
+                succ->father = nullptr;
+            }else{
+                if (x->chave <= x->father->chave)
+                    x->father->left = succ;
+                else
+                    x->father->right = succ;
+                succ->father = x->father;
+            }
+
+            x->right = nullptr;
+            x->left = nullptr;
+            
+            x->father = temp;
+            temp->left = x;
+
         }
-        else  removerAVL_(i);
+        removerAVL_(i);
 
     }
 
@@ -359,3 +388,31 @@ class DicioAVL{
     }
 
 };
+
+/*
+#include <iostream>
+using namespace std;
+int main()
+{
+    DicioAVL<double, double> dict;
+    dict.inserir(204,-21);
+    auto in2 = dict.inserir(169.75, 59.5);
+    auto in3 = dict.inserir(246.75, -60);
+
+    for (auto it = dict.inicio(); it != dict.fim(); ++it)
+        cout << "KEY: " <<  it.chave() << " VALUE: " << it.valor() << endl;
+
+    dict.remover(dict.buscar(204));
+
+    for (auto it = dict.inicio(); it != dict.fim(); ++it)
+        cout << "KEY: " << it.chave() << " VALUE: " << it.valor() << endl;
+
+    auto it = dict.buscar(246.75);
+    if(it != dict.fim()){if(it == in3) cout << "Igual" << endl; else cout << "Diferente" << endl;}
+
+     it = dict.buscar(169.75);
+    if(it != dict.fim()){if(it == in2) cout << "Igual" << endl; else cout << "Diferente" << endl;}
+    
+    return 0;
+}
+*/

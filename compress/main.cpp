@@ -436,7 +436,7 @@ int main(int argc, char const *argv[])
 
 		if (maxVector != 0){
 			
-			maxVector = maxVector * 2 - 1;  // 2*n - 1
+			maxVector = maxVector * 2 - 1; 
 			treeVec = new Noh[maxVector];
 		
 			constructTree(heap, treeVec, maxHeap, lenHeap, maxVector, lenVector, v);
