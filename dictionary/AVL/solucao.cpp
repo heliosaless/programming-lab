@@ -29,7 +29,7 @@ class DicioAVL{
         y->father = x->father;
         if(x->father != nullptr && x->chave <= x->father->chave) x->father->left = y;
         else if(x->father != nullptr && x->chave > x->father->chave) x->father->right = y;
-        else{ raiz = y; } // pai do x é nulo.
+        else{ raiz = y; } 
         
         y->left = x;
         x->father = y;
@@ -46,7 +46,7 @@ class DicioAVL{
         y->father = x->father;
         if(x->father != nullptr && x->chave <= x->father->chave) x->father->left = y;
         else if(x->father != nullptr && x->chave > x->father->chave) x->father->right = y;
-        else{ raiz = y; } // pai do x é nulo.
+        else{ raiz = y; } 
         
         y->right = x;
         x->father = y;
@@ -83,7 +83,7 @@ class DicioAVL{
     };
 
     DicioAVL():raiz(nullptr){}
-    ~DicioAVL(){                // Desaloca a memória dinamica
+    ~DicioAVL(){               
         if(raiz != nullptr) dealloc(raiz);
     }
 
@@ -121,25 +121,12 @@ class DicioAVL{
             Iterador aux = i; ++aux;
             Noh* succ = aux.p;
 
-            if (x->left != nullptr){          // Colocar o filho esquerdo do x como filho esquerdo do succ
+            if (x->left != nullptr){          
                 x->left->father = succ;
                 succ->left = x->left;
             }
 
-            // Essas instruções não fazem sentido para succ == x->right
-            if (succ != x->right){    
-                if (succ->right != nullptr){         // Colocar o filho direito do sucessor como filho do esquerdo do direito do x
-                    succ->right->father = x->right;
-                }   
-                x->right->left = succ->right;
-
-                x->right->father = succ;
-                succ->right = x->right;
-            }
-
-            Noh* temp = succ->father;
-
-            if (x->father == nullptr){            // Verifica se estamos removendo a raiz
+            if (x->father == nullptr){           
                 raiz = succ;
                 succ->father = nullptr;
             }else{
@@ -150,15 +137,33 @@ class DicioAVL{
                 succ->father = x->father;
             }
 
-            x->right = nullptr;
-            x->left = nullptr;
-            
-            x->father = temp;
-            temp->left = x;
+            if (succ != x->right){   
+                Noh*succ_rig = succ->right;
 
+                x->right->father = succ;
+                succ->right = x->right;
+
+                x->father = succ->right;
+                succ->right->left = x;
+
+                x->right = succ_rig;
+                succ_rig->father = x;
+            }else{
+                x->left = nullptr;
+                x->right = succ->right;
+                if(succ->right != nullptr) succ->right->father = x;
+
+                succ->right = x;
+                x->father = succ;
+            }
+
+            int a = x->b;
+            x->b = succ->b;
+            succ->b = a;
+            removerAVL_(i, true);
+            return;
         }
-        removerAVL_(i);
-
+        removerAVL_(i, false);
     }
 
     Iterador buscar(TC c){
@@ -175,60 +180,55 @@ class DicioAVL{
 
     private:
 
-    void removerAVL_(Iterador i){
+    void removerAVL_(Iterador i, bool isChange){
         Noh* del = i.p;
-        Noh *son;
         
         if (del->left != nullptr && del->right == nullptr)
         {
-            if (del->father == nullptr){ // Verifica se estamos removendo raiz
+            if (del->father == nullptr){ 
                 raiz = del->left;
                 del->left->father = nullptr;
             }else{
-                if (del->chave <= del->father->chave)
+                if (!isChange && del->chave <= del->father->chave)
                     del->father->left = del->left;
                 else
                     del->father->right = del->left;
                 del->left->father = del->father;
             }
-            son = del->left;
         }
 
         else if (del->left == nullptr && del->right != nullptr){
 
-            if (del->father == nullptr){ // Verifica se estamos removendo raiz
+            if (del->father == nullptr){ 
                 raiz = del->right;
                 del->right->father = nullptr;
             }else{
-                if (del->chave <= del->father->chave)
+                if (!isChange && del->chave <= del->father->chave)
                     del->father->left = del->right;
                 else
                     del->father->right = del->right;
                 del->right->father = del->father;
             }
-            son = del->right;
         }
 
         else{
-
-            if (del->father == nullptr) // Verifica se estamos removendo raiz
+            if (del->father == nullptr) 
                 raiz = nullptr;
             else{
-                if (del->chave <= del->father->chave)
+                if (!isChange && del->chave <= del->father->chave)
                     del->father->left = nullptr;
                 else
                     del->father->right = nullptr;
             }
-            son = del;
         }
 
-        Noh* x;
         bool decreased = true;
-        
-        while(decreased && son->father != nullptr){
-            x = son->father;
+        bool first = true;
+        Noh* x, *aux = del;
 
-            if(son->chave <= x->chave){     // Sub arvore esquerda diminuiu
+        while(decreased && aux != nullptr){
+            x = aux->father;
+            if(!first && aux->chave <= x->chave){     // Sub arvore esquerda diminuiu
                 if(x->b == -1){
                     x->b = 0;
                     decreased = true;
@@ -261,6 +261,7 @@ class DicioAVL{
                     }
                 }
             }else{              // Sub arvore direita diminui
+                first = false;
                 if(x->b == 1){
                     x->b = 0;
                     decreased = true;
@@ -294,7 +295,7 @@ class DicioAVL{
                 }
 
             }
-            son = son->father;
+            aux = aux->father;
         }
 
         delete del;
@@ -389,30 +390,51 @@ class DicioAVL{
 
 };
 
-/*
-#include <iostream>
-using namespace std;
-int main()
-{
-    DicioAVL<double, double> dict;
-    dict.inserir(204,-21);
-    auto in2 = dict.inserir(169.75, 59.5);
-    auto in3 = dict.inserir(246.75, -60);
 
-    for (auto it = dict.inicio(); it != dict.fim(); ++it)
-        cout << "KEY: " <<  it.chave() << " VALUE: " << it.valor() << endl;
-
-    dict.remover(dict.buscar(204));
-
-    for (auto it = dict.inicio(); it != dict.fim(); ++it)
-        cout << "KEY: " << it.chave() << " VALUE: " << it.valor() << endl;
-
-    auto it = dict.buscar(246.75);
-    if(it != dict.fim()){if(it == in3) cout << "Igual" << endl; else cout << "Diferente" << endl;}
-
-     it = dict.buscar(169.75);
-    if(it != dict.fim()){if(it == in2) cout << "Igual" << endl; else cout << "Diferente" << endl;}
+// #include <iostream>
+// using namespace std;
+// int main()
+// {
     
-    return 0;
-}
-*/
+//     DicioAVL<double, double> dict;
+//     dict.inserir(204,-21);
+//     auto in2 = dict.inserir(169.75, 59.5);
+//     auto in3 = dict.inserir(246.75, -60);
+
+//     for (auto it = dict.inicio(); it != dict.fim(); ++it)
+//         cout << "KEY: " <<  it.chave() << " VALUE: " << it.valor() << endl;
+
+//     dict.remover(dict.buscar(204));
+
+//     for (auto it = dict.inicio(); it != dict.fim(); ++it)
+//         cout << "KEY: " << it.chave() << " VALUE: " << it.valor() << endl;
+
+//     auto it = dict.buscar(246.75);
+//     if(it != dict.fim()){if(it == in3) cout << "Igual" << endl; else cout << "Diferente" << endl;}
+
+//      it = dict.buscar(169.75);
+//     if(it != dict.fim()){if(it == in2) cout << "Igual" << endl; else cout << "Diferente" << endl;}
+
+//     DicioAVL<double, double> dict2;
+//     dict2.inserir(-90.5, -87);
+//     dict2.inserir(-287.75, -8);
+//     dict2.inserir(-262, -52);
+//     cout << dict2.obter_raiz()->chave << " " << dict2.obter_raiz()->b << endl;
+//     cout << dict2.obter_raiz()->obter_esq()->chave << endl;
+//     cout << dict2.obter_raiz()->obter_dir()->chave << endl;
+//     cout << "---------" << "remove" << endl;
+    
+//     it = dict2.buscar(-262);
+//     dict2.remover(it);
+//     cout << dict2.obter_raiz()->chave << " " << dict2.obter_raiz()->b << endl;
+//     cout << dict2.obter_raiz()->obter_esq()->chave << endl;
+
+//     cout << "---------" << "insere" << endl;
+//     dict2.inserir(-140, 7.5);
+//     cout << dict2.obter_raiz()->chave << " " << dict2.obter_raiz()->b << endl;
+//     cout << dict2.obter_raiz()->obter_esq()->chave << endl;
+//     cout << dict2.obter_raiz()->obter_dir()->chave << endl;
+
+//     return 0;
+// }
+ 
