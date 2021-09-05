@@ -2,6 +2,7 @@
 // Matrícula: 400800
 
 #include <new>
+
 template <typename TC, typename TV>
 class DicioAVL{
     public:
@@ -160,6 +161,7 @@ class DicioAVL{
             int a = x->b;
             x->b = succ->b;
             succ->b = a;
+
             removerAVL_(i, true);
             return;
         }
@@ -223,12 +225,11 @@ class DicioAVL{
         }
 
         bool decreased = true;
-        bool first = true;
         Noh* x, *aux = del;
 
         while(decreased && aux != nullptr){
             x = aux->father;
-            if(!first && aux->chave <= x->chave){     // Sub arvore esquerda diminuiu
+            if(!isChange && x!=nullptr && aux->chave <= x->chave){     // Sub arvore esquerda diminuiu
                 if(x->b == -1){
                     x->b = 0;
                     decreased = true;
@@ -243,6 +244,7 @@ class DicioAVL{
                     Noh* y = x->right;
                     if(y->b == 1){
                         rot_esq(x);
+                        aux = y;
                         x->b = 0; y->b = 0; decreased = true;
                     }
                     else if(y->b == -1){
@@ -252,16 +254,20 @@ class DicioAVL{
                         else { x->b = 0; y->b = 1;}
                         rot_dir(y);
                         rot_esq(x);
+                        aux = z;
                         z->b = 0;
                         decreased = true;
                     }
                     else{
                         rot_esq(x);
+                        aux = y;
                         x->b = 1; y->b = -1; decreased = false;
                     }
                 }
-            }else{              // Sub arvore direita diminui
-                first = false;
+            }
+            else if (isChange || (x != nullptr && aux->chave > x->chave))
+            { // Sub arvore direita diminui
+                isChange = false;
                 if(x->b == 1){
                     x->b = 0;
                     decreased = true;
@@ -276,6 +282,7 @@ class DicioAVL{
                     Noh* y = x->left;
                     if(y->b == -1){
                         rot_dir(x);
+                        aux = y;
                         x->b = 0; y->b = 0; decreased = true;
                     }
                     else if(y->b == 1){
@@ -286,15 +293,16 @@ class DicioAVL{
                         rot_esq(y);
                         rot_dir(x);
                         z->b = 0;
+                        aux = z;
                         decreased = true;
                     }
                     else{
                         rot_dir(x);
+                        aux = y;
                         x->b = -1; y->b = 1; decreased = false;
                     }
                 }
-
-            }
+            }else{}
             aux = aux->father;
         }
 
@@ -390,50 +398,103 @@ class DicioAVL{
 
 };
 
-
 // #include <iostream>
 // using namespace std;
 // int main()
 // {
+
+//         // DicioAVL<double, double> dict;
+//         // dict.inserir(204,-21);
+//         // auto in2 = dict.inserir(169.75, 59.5);
+//         // auto in3 = dict.inserir(246.75, -60);
+
+//         // for (auto it = dict.inicio(); it != dict.fim(); ++it)
+//         //     cout << "KEY: " <<  it.chave() << " VALUE: " << it.valor() << endl;
+
+//         // dict.remover(dict.buscar(204));
+//         // cout << "204 removido" << endl;
+
+//         // for (auto it = dict.inicio(); it != dict.fim(); ++it)
+//         //     cout << "KEY: " << it.chave() << " VALUE: " << it.valor() << endl;
+
+//         // auto it = dict.buscar(246.75);
+//         // if(it != dict.fim()){if(it == in3) cout << "Igual" << endl; else cout << "Diferente" << endl;}
+//         // else cout << "Elemento nao encontrado"  << endl;
+
+//         // it = dict.buscar(169.75);
+//         // if(it != dict.fim()){if(it == in2) cout << "Igual" << endl; else cout << "Diferente" << endl;}
+//         // else cout << "Elemento nao encontrado"  << endl;
+
+//         // dict.remover(dict.buscar(169.75));
+
+//         // for (auto it = dict.inicio(); it != dict.fim(); ++it)
+//         //     cout << "KEY: " << it.chave() << " VALUE: " << it.valor() << endl;
+
+//         // it = dict.buscar(246.75);
+//         // if(it != dict.fim()){if(it == in3) cout << "Igual" << endl; else cout << "Diferente" << endl;}
+//         // else cout << "Elemento nao encontrado"  << endl;
+
+//         // it = dict.buscar(169.75);
+//         // if(it != dict.fim()){if(it == in2) cout << "Igual" << endl; else cout << "Diferente" << endl;}
+//         // else cout << "Elemento nao encontrado"  << endl;
+
+//     // DicioAVL<double, double> dict2;
+//     // dict2.inserir(-90.5, -87);
+//     // dict2.inserir(-287.75, -8);
+//     // dict2.inserir(-262, -52);
+//     // for (auto it = dict2.inicio(); it != dict2.fim(); ++it)
+//     //     cout << "KEY: " << it.chave() << " VALUE: " << it.valor() << endl;
+
     
-//     DicioAVL<double, double> dict;
-//     dict.inserir(204,-21);
-//     auto in2 = dict.inserir(169.75, 59.5);
-//     auto in3 = dict.inserir(246.75, -60);
+//     // dict2.remover(dict2.buscar(-262));
+//     // cout << "-------" << "remove" << endl;
+//     // cout << dict2.obter_raiz()->chave <<" " <<dict2.obter_raiz()->b << endl;
+//     // cout << dict2.obter_raiz()->obter_esq()->chave << " " << dict2.obter_raiz()->obter_esq()->b << endl;
 
-//     for (auto it = dict.inicio(); it != dict.fim(); ++it)
-//         cout << "KEY: " <<  it.chave() << " VALUE: " << it.valor() << endl;
+//     // cout << "---------" << "insere" << endl;
+//     // dict2.inserir(-140, 7.5);
 
-//     dict.remover(dict.buscar(204));
+//     // cout << dict2.obter_raiz()->chave << " " << dict2.obter_raiz()->b << endl;
+//     // cout << dict2.obter_raiz()->obter_esq()->chave << " " << dict2.obter_raiz()->obter_esq()->b << endl;
+//     // cout << dict2.obter_raiz()->obter_dir()->chave << " " << dict2.obter_raiz()->obter_dir()->b << endl;
 
-//     for (auto it = dict.inicio(); it != dict.fim(); ++it)
-//         cout << "KEY: " << it.chave() << " VALUE: " << it.valor() << endl;
-
-//     auto it = dict.buscar(246.75);
-//     if(it != dict.fim()){if(it == in3) cout << "Igual" << endl; else cout << "Diferente" << endl;}
-
-//      it = dict.buscar(169.75);
-//     if(it != dict.fim()){if(it == in2) cout << "Igual" << endl; else cout << "Diferente" << endl;}
-
-//     DicioAVL<double, double> dict2;
-//     dict2.inserir(-90.5, -87);
-//     dict2.inserir(-287.75, -8);
-//     dict2.inserir(-262, -52);
-//     cout << dict2.obter_raiz()->chave << " " << dict2.obter_raiz()->b << endl;
-//     cout << dict2.obter_raiz()->obter_esq()->chave << endl;
-//     cout << dict2.obter_raiz()->obter_dir()->chave << endl;
-//     cout << "---------" << "remove" << endl;
     
-//     it = dict2.buscar(-262);
-//     dict2.remover(it);
-//     cout << dict2.obter_raiz()->chave << " " << dict2.obter_raiz()->b << endl;
-//     cout << dict2.obter_raiz()->obter_esq()->chave << endl;
 
-//     cout << "---------" << "insere" << endl;
-//     dict2.inserir(-140, 7.5);
-//     cout << dict2.obter_raiz()->chave << " " << dict2.obter_raiz()->b << endl;
-//     cout << dict2.obter_raiz()->obter_esq()->chave << endl;
-//     cout << dict2.obter_raiz()->obter_dir()->chave << endl;
+//     // DicioAVL<double, double> dict3;
+//     // auto in1 = dict3.inserir(204, -21);
+//     // auto in2 = dict3.inserir(169.75, 59.5);
+
+//     // for (auto it = dict3.inicio(); it != dict3.fim(); ++it)
+//     //     cout << "KEY: " << it.chave() << " VALUE: " << it.valor() << endl;
+
+//     // dict3.remover(in2);
+
+//     // auto it = dict3.buscar(204);
+//     // if(it != dict3.fim()){if(it == in1) cout << "Igual" << endl; else cout << "Diferente" << endl;}
+//     // else cout << "Nao encontrado" << endl;
+
+//     // auto it2 = dict3.buscar(169.75);
+//     // if(it2 != dict3.fim()){if(it == in2) cout << "Igual" << endl; else cout << "Diferente" << endl;}
+//     // else cout << "Nao encontrado" << endl;
+
+
+
+//     // DicioAVL<double, int> dict;
+//     // dict.inserir(271.25, 83);
+//     // auto in2 = dict.inserir(81.25, 43);
+//     // auto in3 = dict.inserir(-215, 21);
+//     // auto in4 = dict.inserir(-290, -51);
+
+//     // cout << dict.obter_raiz()->chave << " " << dict.obter_raiz()->b << endl;
+//     // cout << dict.obter_raiz()->obter_esq()->chave << " " << dict.obter_raiz()->obter_esq()->b << endl;
+//     // cout << dict.obter_raiz()->obter_dir()->chave << " " << dict.obter_raiz()->obter_dir()->b << endl;
+
+//     // dict.remover(dict.buscar(81.25));
+//     // cout << "81.25 removido" << endl;
+
+//     // cout << dict.obter_raiz()->chave << " " << dict.obter_raiz()->b << endl;
+//     // cout << dict.obter_raiz()->obter_esq()->chave << " " << dict.obter_raiz()->obter_esq()->b << endl;
+//     // cout << dict.obter_raiz()->obter_dir()->chave << " " << dict.obter_raiz()->obter_dir()->b << endl;
 
 //     return 0;
 // }
